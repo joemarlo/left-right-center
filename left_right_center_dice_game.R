@@ -219,9 +219,9 @@ LRC.plot <-  playLRC(n.players = 4) %>%
   scale_color_brewer(palette = "Spectral") +
   transition_reveal(along = Turn) +
   coord_cartesian(clip = 'off') +
-  labs(title = "Number of die left per player",
+  labs(title = "Dollars left per player",
        x = "Turn",
-       y = "Number of die") +
+       y = "Dollars") +
   theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
         legend.position = "none",
         panel.grid.minor = element_line(color = NA),
@@ -244,6 +244,5 @@ LRC.gif <- animate(LRC.plot,
                    width = 500)
 
 anim_save(animation = LRC.gif,
-          filename = "LCR.gif",
+          filename = "LRC.gif",
           path = "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game")
- 
