@@ -236,9 +236,14 @@ LRC.plot <-  playLRC(n.players = 4) %>%
                                   face = "bold"))
 
 #build the animation
-animate(LRC.plot,
-        fps = 24,
-        duration = 12,
-        end_pause = 24 * 3, #pause for 3 seconds at the end
-        height = 350,
-        width = 500)
+LRC.gif <- animate(LRC.plot,
+                   fps = 24,
+                   duration = 12,
+                   end_pause = 24 * 3, #pause for 3 seconds at the end
+                   height = 350,
+                   width = 500)
+
+anim_save(animation = LRC.gif,
+          filename = "LCR.gif",
+          path = "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game")
+ 
