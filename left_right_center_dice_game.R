@@ -105,7 +105,7 @@ playLRC(n.player = 6)
 n.player.seq <- c(2:6, seq(8, 20, 2)) 
 
 #controls the number of games to simulative per game size
-n.sims <- 1000
+n.sims <- 5000
 
 #list of number of players to map playLRC function over which produces the simulations
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
@@ -131,7 +131,7 @@ cleanedResultsDF <- map(names(playerResultsDF), function(df) {
     arrange(GameID.n.players, GameID.sim, Turn, Player)
 }) %>% bind_rows()
 
-# plots -------------------------------------------------------------------
+# EDA and plots -----------------------------------------------------------
 
 #view a single game play
 cleanedResultsDF %>%
@@ -162,8 +162,28 @@ cleanedResultsDF %>%
   scale_y_continuous(label = scales::comma) +
   facet_wrap( ~ GameID.n.players) +
   labs(title = "Frequency of LRC wins by player position and total number of players",
+       subtitle = "Results from 10,000 simulations",
        x = "Player by starting position",
-       y = "Count of wins")
+       y = "Count of wins") +
+  theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
+        legend.position = "none",
+        panel.grid.minor = element_line(color = NA),
+        panel.background = element_rect(fill = "seashell2"),
+        plot.background = element_rect(fill = "seashell",
+                                       color = NA),
+        axis.title = element_text(color = "gray30",
+                                  size = 12),
+        strip.background = element_rect(fill = "seashell3"),
+        plot.title = element_text(color = "gray30",
+                                  size = 14,
+                                  face = "bold"))
+
+ggsave(filename = "game_lengths.png",
+       plot = last_plot(),
+       path = "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game",
+       device = "png",
+       width = 14,
+       height = 7)
 
 #linear regression coefficients by game size
 cleanedResultsDF %>%
@@ -197,6 +217,14 @@ cleanedResultsDF %>%
        x = "Player coefficient",
        y = "Number of players") +
   theme(axis.ticks = element_line(colour = "grey50"))
+
+#how many times did someone lose all their dollars and then go on to win
+map_lgl(names(playerResultsDF), function(df) {
+  DF <- playerResultsDF[[df]]
+  winner <- names(DF)[DF[nrow(DF),] > 0]
+  ever.zero <- sum(DF[, winner] == 0) > 0
+  return(ever.zero)
+}) %>% sum() / length(total.sims)
 
 # single game animation ------------------------------------------------------------
 
