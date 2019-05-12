@@ -2,6 +2,11 @@ library(tidyverse)
 library(gganimate)
 library(broom)
 
+project.path <- "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game/left-right-center"
+
+
+# Game design -------------------------------------------------------------
+
 #function for a dice roll
 rollDice <- function(n.rolls, max.rolls = 3){
   #function randomly returns one of four possible sides to a die per number of rolls
@@ -95,7 +100,7 @@ playLRC <- function(n.players, max.turns = 1000) {
 }
 
 
-# run the game ------------------------------------------------------------
+# Run the game ------------------------------------------------------------
 
 #run a single game
 playLRC(n.player = 6)
@@ -133,6 +138,19 @@ cleanedResultsDF <- map(names(playerResultsDF), function(df) {
 
 # EDA and plots -----------------------------------------------------------
 
+#define plot theme
+seashell.theme <- theme(legend.position = "none",
+                        panel.grid.minor = element_line(color = NA),
+                        panel.background = element_rect(fill = "seashell2"),
+                        plot.background = element_rect(fill = "seashell",
+                                                       color = NA),
+                        axis.title = element_text(color = "gray30",
+                                                  size = 12),
+                        strip.background = element_rect(fill = "seashell3"),
+                        plot.title = element_text(color = "gray30",
+                                                  size = 14,
+                                                  face = "bold"))
+
 #view a single game play
 cleanedResultsDF %>%
   filter(GameID.n.players == 6,
@@ -140,7 +158,8 @@ cleanedResultsDF %>%
   mutate(Player = as.factor(Player)) %>%
   ggplot(aes(x = Turn, y = Rolls.left, group = Player, color = Player)) +
   geom_line() +
-  geom_point()
+  geom_point() +
+  seashell.theme
 
 #histogram of game lengths
 cleanedResultsDF %>%
@@ -149,7 +168,8 @@ cleanedResultsDF %>%
   ggplot(aes(x = Length)) +
   geom_histogram(binwidth = 10,
                  color = "white") +
-  facet_wrap(~ GameID.n.players)
+  facet_wrap(~ GameID.n.players) +
+  seashell.theme
 
 #histogram of winner by starting position
 cleanedResultsDF %>%
@@ -165,25 +185,15 @@ cleanedResultsDF %>%
        subtitle = "Results from 10,000 simulations",
        x = "Player by starting position",
        y = "Count of wins") +
-  theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
-        legend.position = "none",
-        panel.grid.minor = element_line(color = NA),
-        panel.background = element_rect(fill = "seashell2"),
-        plot.background = element_rect(fill = "seashell",
-                                       color = NA),
-        axis.title = element_text(color = "gray30",
-                                  size = 12),
-        strip.background = element_rect(fill = "seashell3"),
-        plot.title = element_text(color = "gray30",
-                                  size = 14,
-                                  face = "bold"))
+  seashell.theme +
+  theme(axis.text.x = element_text(size = 5))
 
-ggsave(filename = "game_lengths.png",
+ggsave(filename = "LRC_winners.png",
        plot = last_plot(),
-       path = "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game",
+       path = project.path,
        device = "png",
-       width = 14,
-       height = 7)
+       width = 9,
+       height = 5)
 
 #linear regression coefficients by game size
 cleanedResultsDF %>%
@@ -216,7 +226,8 @@ cleanedResultsDF %>%
   labs(title = "Player coefficent from linear model",
        x = "Player coefficient",
        y = "Number of players") +
-  theme(axis.ticks = element_line(colour = "grey50"))
+  theme(axis.ticks = element_line(colour = "grey50")) +
+  seashell.theme
 
 #how many times did someone lose all their dollars and then go on to win
 map_lgl(names(playerResultsDF), function(df) {
@@ -226,7 +237,41 @@ map_lgl(names(playerResultsDF), function(df) {
   return(ever.zero)
 }) %>% sum() / length(total.sims)
 
-# single game animation ------------------------------------------------------------
+##how many times did someone lose all their dollars and then go on to win -- grouped by game size
+EverZeroDF <- map_df(names(playerResultsDF), function(df) {
+  DF <- playerResultsDF[[df]]
+  winner <- names(DF)[DF[nrow(DF),] > 0]
+  Ever.zero <- sum(DF[, winner] == 0) > 0
+  result <- tibble(df, Ever.zero)
+  return(result)
+}) %>%
+  separate(col = df, into = c("GameID.n.players", "GameID.sim"), sep = "_") %>%
+  mutate(GameID.n.players = as.integer(GameID.n.players),
+         GameID.sim = as.integer(GameID.sim)) %>%
+  group_by(GameID.n.players) %>%
+  summarize(Percent.ever.zero = sum(Ever.zero) / n.sims)
+
+#plot the % of games where the winner came back from zero
+EverZeroDF %>%
+  ggplot(aes(x = GameID.n.players,
+         y = Percent.ever.zero)) +
+    geom_point() +
+    geom_line() +
+    scale_y_continuous(label = scales::percent) +
+    labs(title = "Percent of games where the winner came back after have zero dollars",
+         subtitle = "Results from 10,000 simulations",
+         x = "Game size",
+         y = "Percent of games") +
+    seashell.theme
+
+ggsave(filename = "Comeback_winners.png",
+       plot = last_plot(),
+       path = project.path,
+       device = "png",
+       width = 9,
+       height = 5)
+
+# Single game animation ------------------------------------------------------------
 
 #run a game and then build the plot
 LRC.plot <-  playLRC(n.players = 4) %>%
@@ -250,18 +295,9 @@ LRC.plot <-  playLRC(n.players = 4) %>%
   labs(title = "Dollars left per player",
        x = "Turn",
        y = "Dollars") +
+  seashell.theme +
   theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
-        legend.position = "none",
-        panel.grid.minor = element_line(color = NA),
-        panel.background = element_rect(fill = "seashell"),
-        plot.background = element_rect(fill = "seashell",
-                                       color = NA),
-        axis.title = element_text(color = "gray30",
-                                  size = 12),
-        strip.background = element_rect(fill = "seashell2"),
-        plot.title = element_text(color = "gray30",
-                                  size = 14,
-                                  face = "bold"))
+        panel.background = element_rect(fill = "seashell"))
 
 #build the animation
 LRC.gif <- animate(LRC.plot,
@@ -273,4 +309,6 @@ LRC.gif <- animate(LRC.plot,
 
 anim_save(animation = LRC.gif,
           filename = "LRC.gif",
-          path = "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game")
+          path = file.path)
+
+
