@@ -182,7 +182,7 @@ cleanedResultsDF %>%
   scale_y_continuous(label = scales::comma) +
   facet_wrap( ~ GameID.n.players) +
   labs(title = "Frequency of LRC wins by player position and total number of players",
-       subtitle = "Results from 10,000 simulations",
+       subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
        x = "Player by starting position",
        y = "Count of wins") +
   seashell.theme +
@@ -253,13 +253,12 @@ EverZeroDF <- map_df(names(playerResultsDF), function(df) {
 
 #plot the % of games where the winner came back from zero
 EverZeroDF %>%
-  ggplot(aes(x = GameID.n.players,
-         y = Percent.ever.zero)) +
+  ggplot(aes(x = GameID.n.players, y = Percent.ever.zero)) +
     geom_point() +
     geom_line() +
     scale_y_continuous(label = scales::percent) +
     labs(title = "Percent of games where the winner came back after have zero dollars",
-         subtitle = "Results from 10,000 simulations",
+         subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
          x = "Game size",
          y = "Percent of games") +
     seashell.theme
