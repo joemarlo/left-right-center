@@ -261,6 +261,7 @@ EverZeroDF %>%
   ggplot(aes(x = GameID.n.players, y = Percent.ever.zero)) +
     geom_point() +
     geom_line() +
+    scale_x_continuous(breaks = n.player.seq) +
     scale_y_continuous(label = scales::percent) +
     labs(title = "Percent of games where the winner came back after have zero dollars",
          subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
