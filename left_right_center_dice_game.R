@@ -195,6 +195,11 @@ ggsave(filename = "LRC_winners.png",
        width = 9,
        height = 5)
 
+#create plotly and send to server
+p <- ggplotly(ggplot2::last_plot())
+api_create(p, filename = "LRC-winners")
+rm(p)
+
 #linear regression coefficients by game size
 cleanedResultsDF %>%
   group_by(GameID.n.players, GameID.sim) %>%
