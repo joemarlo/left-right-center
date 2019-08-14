@@ -10,3 +10,4 @@ If the game is totally up to chance then what is the point of simulating it? Is 
 
 testing git from mac and again
 
+more testing
