@@ -7,8 +7,3 @@ Around the holidays my family enjoys a game of [Left Right Center](https://en.wi
 
 ## Simulating it
 If the game is totally up to chance then what is the point of simulating it? Is there actually an edge to be had? The expected average outcome of any given turn will result in less dollars for the player as only half the die faces (the dots) result in keeping dollars and the other half result in giving away dollars. Does this mean that its best to go last? Let's see.
-
-testing git from mac and again
-
-more testing
-and more
