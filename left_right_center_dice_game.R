@@ -1,6 +1,7 @@
 library(tidyverse)
 library(gganimate)
 library(broom)
+library(parallel)
 
 project.path <- "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game/left-right-center"
 
@@ -116,7 +117,8 @@ n.sims <- 5000
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
 
 ###run the simulation and name the results
-playerResultsDF <- map(total.sims, playLRC)
+# playerResultsDF <- map(total.sims, playLRC) #single core
+playerResultsDF <- mclapply(total.sims, playLRC, mc.cores = getOption("mc.cores", 4L)) #multicore alternative
 names(playerResultsDF) <- paste0(total.sims, "_", 1:n.sims)
 
 # Data clean up -----------------------------------------------------------
