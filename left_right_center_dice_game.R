@@ -108,10 +108,10 @@ playLRC(n.player = 6)
 
 ###set up the simulation
 #controls the number of players per game (i.e. game size)
-n.player.seq <- c(2:6, seq(8, 20, 2)) 
+n.player.seq <- c(2:6, 8, seq(10, 30, 4))
 
 #controls the number of games to simulative per game size
-n.sims <- 10000
+n.sims <- 2500
 
 #list of number of players to map playLRC function over which produces the simulations
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
