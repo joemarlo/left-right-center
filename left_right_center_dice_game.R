@@ -68,7 +68,7 @@ takeTurn <- function(gameDF, player, n.players, rolls, roll.index) {
 
 #function to play single game of LRC
 playLRC <- function(n.players, max.turns = 1000) {
-  #function sets up a new game of LRC and returns a finished matrix
+  #function sets up a new game of LRC and returns a finished dataframe
   #n.players is the total number of players within the game
   #max.turns is the total possible turns (required to initialize matrix)
   
