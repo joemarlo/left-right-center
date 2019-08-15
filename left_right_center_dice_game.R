@@ -3,8 +3,8 @@ library(gganimate)
 library(broom)
 library(parallel)
 
-project.path <- "/Users/joemarlo/Dropbox/Data/Projects/LCR dice game/left-right-center"
-
+project.path <- "/Users/joemarlo/Dropbox/Data/Projects/Left-right-center" #mac
+project.path <- "/home/joemarlo/Dropbox/Data/Projects/Left-right-center" #ubuntu
 
 # Game design -------------------------------------------------------------
 
@@ -111,7 +111,7 @@ playLRC(n.player = 6)
 n.player.seq <- c(2:6, seq(8, 20, 2)) 
 
 #controls the number of games to simulative per game size
-n.sims <- 5000
+n.sims <- 10000
 
 #list of number of players to map playLRC function over which produces the simulations
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
