@@ -111,20 +111,22 @@ playLRC(n.player = 6)
 n.player.seq <- c(2:6, 8, seq(10, 30, 4))
 
 #controls the number of games to simulative per game size
-n.sims <- 2500
+n.sims <- 1000
 
 #list of number of players to map playLRC function over which produces the simulations
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
 
 ###run the simulation and name the results
 # playerResultsDF <- map(total.sims, playLRC) #single core
-playerResultsDF <- mclapply(total.sims, playLRC, mc.cores = getOption("mc.cores", 4L)) #multicore alternative
+playerResultsDF <- mclapply(total.sims, playLRC, mc.cores = 4L) #multicore alternative
 names(playerResultsDF) <- paste0(total.sims, "_", 1:n.sims)
 
 # Data clean up -----------------------------------------------------------
 
 #add IDs to each game and turn -- then merge into one long dataframe
-cleanedResultsDF <- map(names(playerResultsDF), function(df) {
+cleanedResultsDF <- mclapply(names(playerResultsDF),
+                             mc.cores = 4L,
+                             function(df) {
   playerResultsDF[[df]] %>%
     rowid_to_column() %>%
     rename(Turn = rowid) %>%
