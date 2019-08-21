@@ -1,7 +1,6 @@
 library(shiny)
 library(tidyverse)
 
-
 # Define game logic -------------------------------------------------------
 
 rollDice <- function(n.rolls, max.rolls = 3){
@@ -96,22 +95,8 @@ playLRC <- function(n.players, max.turns = 1000) {
 }
 
 
+# UI ----------------------------------------------------------------------
 
-# Plot theme --------------------------------------------------------------
-
-#define plot theme
-seashell.theme <- theme(panel.grid.minor = element_line(color = NA),
-                        panel.background = element_rect(fill = "seashell2"),
-                        plot.background = element_rect(fill = "seashell",
-                                                       color = NA),
-                        axis.title = element_text(color = "gray30",
-                                                  size = 12),
-                        strip.background = element_rect(fill = "seashell3"),
-                        plot.title = element_text(color = "gray30",
-                                                  size = 14,
-                                                  face = "bold"))
-
-# Define UI for application that draws a histogram
 ui <- fluidPage(
    
    # Application title
@@ -143,6 +128,8 @@ ui <- fluidPage(
    )
   )
 
+
+# Server ------------------------------------------------------------------
 
 server <- function(input, output, session) {
   
@@ -181,8 +168,8 @@ server <- function(input, output, session) {
       ggplot(aes(x = Player)) +
       geom_histogram(binwidth = 1,
                      color = "white") +
-      scale_x_continuous(breaks = 1:input$players) +
-      seashell.theme
+      scale_x_continuous(breaks = 1:input$players,
+                         name = "Winning player")
   })
   
   # plot the length of each game
@@ -193,7 +180,7 @@ server <- function(input, output, session) {
       ggplot(aes(x = Length)) +
       geom_histogram(binwidth = 10,
                      color = "white") +
-      seashell.theme
+      xlab("Total number of turns played")
   })
 
 }
