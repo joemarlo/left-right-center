@@ -2,9 +2,13 @@ library(tidyverse)
 library(gganimate)
 library(broom)
 library(parallel)
+require(scales)
+require(gifski)
 
 project.path <- "/Users/joemarlo/Dropbox/Data/Projects/Left-right-center" #mac
 project.path <- "/home/joemarlo/Dropbox/Data/Projects/Left-right-center" #ubuntu
+
+cpu.cores <- 4L #number of cores available for parallel processing
 
 # Game design -------------------------------------------------------------
 
@@ -108,24 +112,23 @@ playLRC(n.player = 6)
 
 ###set up the simulation
 #controls the number of players per game (i.e. game size)
-n.player.seq <- c(2:6, 8, seq(10, 30, 4))
+n.player.seq <- c(2:6, 8, 10, 12, 16, 20)
 
 #controls the number of games to simulative per game size
-n.sims <- 1000
+n.sims <- 5000
 
 #list of number of players to map playLRC function over which produces the simulations
 total.sims <- rep(n.player.seq, n.sims) %>% sort() 
 
 ###run the simulation and name the results
-# playerResultsDF <- map(total.sims, playLRC) #single core
-playerResultsDF <- mclapply(total.sims, playLRC, mc.cores = 4L) #multicore alternative
+playerResultsDF <- mclapply(total.sims, playLRC, mc.cores = cpu.cores)
 names(playerResultsDF) <- paste0(total.sims, "_", 1:n.sims)
 
 # Data clean up -----------------------------------------------------------
 
 #add IDs to each game and turn -- then merge into one long dataframe
 cleanedResultsDF <- mclapply(names(playerResultsDF),
-                             mc.cores = 4L,
+                             mc.cores = cpu.cores,
                              function(df) {
   playerResultsDF[[df]] %>%
     rowid_to_column() %>%
@@ -238,7 +241,7 @@ cleanedResultsDF %>%
   theme(axis.ticks = element_line(colour = "grey50")) +
   seashell.theme
 
-#how many times did someone lose all their dollars and then go on to win
+#what percentage of times did someone lose all their dollars and then go on to win
 map_lgl(names(playerResultsDF), function(df) {
   DF <- playerResultsDF[[df]]
   winner <- names(DF)[DF[nrow(DF),] > 0]
@@ -283,7 +286,7 @@ ggsave(filename = "Comeback_winners.png",
 # Single game animation ------------------------------------------------------------
 
 #run a game and then build the plot
-LRC.plot <-  playLRC(n.players = 4) %>%
+LRC.plot <- playLRC(n.players = 4) %>%
   rowid_to_column() %>%
   rename(Turn = rowid) %>%
   gather(key = Player, value = Rolls.left, -Turn) %>%
@@ -318,6 +321,6 @@ LRC.gif <- animate(LRC.plot,
 
 anim_save(animation = LRC.gif,
           filename = "LRC.gif",
-          path = file.path)
+          path = project.path)
 
 

@@ -125,102 +125,77 @@ ui <- fluidPage(
                      min = 2,
                      max = 20,
                      value = 6),
-         sliderInput(inputId = "turn",
-                     label = "Turn",
-                     min = 1,
-                     max = 100,
-                     value = 1,
-                     animate = animationOptions(interval = 400,
-                                    loop = FALSE))
+         sliderInput(inputId = "n.sims",
+                     label = "Number of simulations",
+                     min = 100,
+                     max = 1000,
+                     value = 100,
+                     step = 100)
       ),
       
       # Show a plot of the generated distribution
       mainPanel(
-         plotOutput("distPlot")
+        tabsetPanel(
+          tabPanel("Winners", plotOutput("plotWinners")),
+          tabPanel("Game Lengths", plotOutput("plotLengths"))
+        )
       )
-   ),
-
-   actionButton(inputId = "refreshButton",
-                label = "Refresh plot"),
-   plotOutput("rys")
-   
    )
+  )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-   
-  pp <- eventReactive(c(input$refreshButton,input$players),{
-      LRCgame <- playLRC(n.players = input$players) %>%
+
+server <- function(input, output, session) {
+  
+  # Run the simulation and return a dataframe containing each games play-by-play
+  selectedData <- reactive({
+    
+    total.sims <- rep(input$players, input$n.sims)
+    
+    ###run the simulation and name the results
+    playerResultsDF <- lapply(total.sims, playLRC)
+    names(playerResultsDF) <- paste0(total.sims, "_", 1:input$n.sims)
+    
+    data <- lapply(names(playerResultsDF), function(df) {
+      playerResultsDF[[df]] %>%
         rowid_to_column() %>%
         rename(Turn = rowid) %>%
-        gather(key = Player, value = Rolls.left, -Turn) %>%
-        select(Player, Turn, Rolls.left) %>%
-        arrange(Player, Turn)
-      
-      xMax <- max(input$players*20,
-                  max(LRCgame$Turn))
-      yMax <- max(6,
-                  max(LRCgame$Rolls.left))
-
-      # generate based on input$bins from ui.R
-      LRCgame %>%
-        ggplot(aes(x = Turn, y = Rolls.left, group = Player, color = Player)) +
-        geom_line(alpha = 0.5) +
-        # geom_segment(aes(xend = max(Turn),
-        #                  yend = Rolls.left),
-        #              linetype = 2) +
-        geom_point(size = 1) +
-        # geom_text(aes(x = max(Turn) + 1,
-        #               label = paste0("Player: ", Player)),
-        #           hjust = 0) +
-        scale_color_brewer(palette = "Spectral") +
-        scale_y_continuous(limits = c(0, yMax),
-                           breaks = 1:yMax) +
-        scale_x_continuous(limits = c(0, xMax),
-                           breaks = seq(0, xMax, floor(xMax / 10))) +
-        coord_cartesian(clip = 'off') +
-        labs(title = "Dollars left per player",
-             x = "Turn",
-             y = "Dollars") +
-        seashell.theme +
-        theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
-              panel.background = element_rect(fill = "seashell"))
-  })
-  output$rys <- renderPlot({
-    pp()
+        mutate(Game = as.character(df)) %>%
+        separate(col = Game, into = c("GameID.n.players", "GameID.sim"), sep = "_") %>%
+        gather(key = Player, value = Rolls.left, -GameID.n.players, -GameID.sim, -Turn) %>%
+        mutate(GameID.n.players = as.integer(GameID.n.players),
+               GameID.sim = as.integer(GameID.sim),
+               Player = as.integer(Player)) %>%
+        select(GameID.n.players, GameID.sim, Turn, Player, Rolls.left) %>%
+        arrange(GameID.n.players, GameID.sim, Turn, Player)}) %>% bind_rows()
+    
+    return(data)
+    
+    })
+  
+  # plot the games' winners
+  output$plotWinners <- renderPlot({
+    selectedData() %>%
+      group_by(GameID.n.players, GameID.sim) %>%
+      filter(Turn == max(Turn),
+             Rolls.left > 0) %>%
+      ggplot(aes(x = Player)) +
+      geom_histogram(binwidth = 1,
+                     color = "white") +
+      scale_x_continuous(breaks = 1:input$players) +
+      seashell.theme
   })
   
-   # output$distPlot <- renderPlot({
-   #   
-   #   #run the game
-   #   LRCgame <- playLRC(n.players = input$players) %>%
-   #     rowid_to_column() %>%
-   #     rename(Turn = rowid) %>%
-   #     gather(key = Player, value = Rolls.left, -Turn) %>%
-   #     select(Player, Turn, Rolls.left) %>%
-   #     arrange(Player, Turn) 
-   #   
-   #   # generate bins based on input$bins from ui.R
-   #   LRCgame %>%
-   #     ggplot(aes(x = Turn, y = Rolls.left, group = Player, color = Player)) +
-   #     geom_line(alpha = 0.5) +
-   #     # geom_segment(aes(xend = max(Turn),
-   #     #                  yend = Rolls.left),
-   #     #              linetype = 2) +
-   #     geom_point(size = 1) +
-   #     # geom_text(aes(x = max(Turn) + 1,
-   #     #               label = paste0("Player: ", Player)),
-   #     #           hjust = 0) +
-   #     scale_color_brewer(palette = "Spectral") +
-   #     coord_cartesian(clip = 'off') +
-   #     labs(title = "Dollars left per player",
-   #          x = "Turn",
-   #          y = "Dollars") +
-   #     seashell.theme +
-   #     theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
-   #           panel.background = element_rect(fill = "seashell"))
-   # 
-   # })
+  # plot the length of each game
+  output$plotLengths <- renderPlot({
+    selectedData() %>%
+      group_by(GameID.n.players, GameID.sim) %>%
+      summarize(Length = max(Turn)) %>%
+      ggplot(aes(x = Length)) +
+      geom_histogram(binwidth = 10,
+                     color = "white") +
+      seashell.theme
+  })
+
 }
 
 # Run the application 
