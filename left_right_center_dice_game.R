@@ -2,13 +2,12 @@ library(tidyverse)
 library(gganimate)
 library(broom)
 library(parallel)
-require(scales)
-require(gifski)
+library(scales)
+library(gifski)
 
-project.path <- "/Users/joemarlo/Dropbox/Data/Projects/Left-right-center" #mac
-project.path <- "/home/joemarlo/Dropbox/Data/Projects/Left-right-center" #ubuntu
+project.path <- getwd()
 
-cpu.cores <- 4L #number of cores available for parallel processing
+cpu.cores <- detectCores() #number of cores available for parallel processing
 
 # Game design -------------------------------------------------------------
 
@@ -27,8 +26,8 @@ rollDice <- function(n.rolls, max.rolls = 3){
 
 #function to calculate a new turn within the game
 takeTurn <- function(gameDF, player, n.players, rolls, roll.index) {
-  #function takes in a dataframe of the game and...
-  #returns an updated dataframe with one new turn calculated
+  #function takes in a dataframe of the game and
+  #    returns an updated dataframe with one new turn calculated
   #gameDF is the current data frame of the game to be updated
   #player is the player who will roll the dice
   #n.players is the total number of players playing the game
@@ -240,6 +239,13 @@ cleanedResultsDF %>%
        y = "Number of players") +
   theme(axis.ticks = element_line(colour = "grey50")) +
   seashell.theme
+
+ggsave(filename = "Player_coefficents.png",
+       plot = last_plot(),
+       path = project.path,
+       device = "png",
+       width = 9,
+       height = 5)
 
 #what percentage of times did someone lose all their dollars and then go on to win
 map_lgl(names(playerResultsDF), function(df) {
