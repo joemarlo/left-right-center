@@ -9,8 +9,11 @@ Around the holidays my family enjoys a game of [Left Right Center](https://en.wi
 If the game is totally up to chance then what is the point of simulating it? Is there actually an edge to be had? The expected average outcome of any given turn will result in less dollars for the player as only half the die faces (the dots) result in keeping dollars and the other half result in giving away dollars. Does this mean that its best to go last?
 
 In order to simulate the game we need to first break it down into its core parts:
+
 `rollDice()`: function calculates a single roll of the dice
+
 `takeTurn()`: function calculates the result of `rollDice()` on the rolling player's score and the players adjacent to them
+
 `playLRC()`: function pulls it all together and simulates a full game; returns the turn-by-turn game scores
 
 We can now simulate many games with any number of players. Running this 50,000 times (10 different game sizes * 5,000 runs each) gives us simulated data of who typically wins the game.
