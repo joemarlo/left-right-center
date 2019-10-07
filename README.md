@@ -20,7 +20,7 @@ We can now simulate many games with any number of players and then examine the r
 
 ![](LRC_winners.png)
 
-There's clearly a gain for going last -- at least with the number of players is low. Once the group gets bigger than ~five it doesn't make a substantial difference, and this is confirmed by fiting a linear model and examining the betas.
+There's clearly a gain for going last -- at least with the number of players is low. Once the group gets bigger than ~five it doesn't make a substantial difference, and this is confirmed by fiting a linear model (# of wins ~ Player position) and examining the betas.
 
 ![](Player_coefficents.png)
 
