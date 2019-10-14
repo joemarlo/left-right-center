@@ -4,6 +4,7 @@ library(broom)
 library(parallel)
 library(scales)
 library(gifski)
+library(svglite)
 
 project.path <- getwd()
 
@@ -145,17 +146,27 @@ cleanedResultsDF <- mclapply(names(playerResultsDF),
 # EDA and plots -----------------------------------------------------------
 
 #define plot theme
-seashell.theme <- theme(legend.position = "none",
-                        panel.grid.minor = element_line(color = NA),
-                        panel.background = element_rect(fill = "seashell2"),
-                        plot.background = element_rect(fill = "seashell",
-                                                       color = NA),
-                        axis.title = element_text(color = "gray30",
-                                                  size = 12),
-                        strip.background = element_rect(fill = "seashell3"),
-                        plot.title = element_text(color = "gray30",
-                                                  size = 14,
-                                                  face = "bold"))
+light.theme <- theme(legend.position = "none",
+                     panel.grid.minor.y = element_line(color = NA),
+                     panel.grid.major.y = element_line(color = "gray95"),
+                     panel.grid.minor.x = element_line(color = NA),
+                     panel.grid.major.x = element_line(color = NA),
+                     panel.background = element_rect(fill = NA),
+                     plot.background = element_rect(fill = NA,
+                                                    color = "gray95",
+                                                    size = 10),
+                     plot.margin = unit(c(1, 1, 1, 1), "cm"),
+                     axis.title = element_text(color = "gray30"),
+                     axis.ticks = element_line(color = NA),
+                     strip.background = element_rect(fill = "gray95"),
+                     strip.text = element_text(color = "gray30",
+                                               size = 11,
+                                               face = "bold"),
+                     plot.title = element_text(color = "gray30",
+                                               face = "bold"),
+                     plot.subtitle = element_text(size = 10,
+                                                  color = "gray30"),
+                     text = element_text(family = "Helvetica"))
 
 #view a single game play
 cleanedResultsDF %>%
@@ -165,7 +176,7 @@ cleanedResultsDF %>%
   ggplot(aes(x = Turn, y = Rolls.left, group = Player, color = Player)) +
   geom_line() +
   geom_point() +
-  seashell.theme
+  light.theme
 
 #histogram of game lengths
 cleanedResultsDF %>%
@@ -175,7 +186,7 @@ cleanedResultsDF %>%
   geom_histogram(binwidth = 10,
                  color = "white") +
   facet_wrap(~ GameID.n.players) +
-  seashell.theme
+  light.theme
 
 #histogram of winner by starting position
 cleanedResultsDF %>%
@@ -184,22 +195,22 @@ cleanedResultsDF %>%
          Rolls.left > 0) %>%
   ggplot(aes(x = Player)) +
   geom_bar(color = "white") +
-  scale_x_continuous(breaks = 1:max(n.player.seq)) +
+  scale_x_continuous(breaks = c(NULL, seq(2, max(n.player.seq), 2))) +
   scale_y_continuous(label = scales::comma) +
   facet_wrap( ~ GameID.n.players) +
   labs(title = "Frequency of LRC wins by player position and total number of players",
        subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
        x = "Player by starting position",
        y = "Count of wins") +
-  seashell.theme +
-  theme(axis.text.x = element_text(size = 5))
+  light.theme +
+  theme(axis.text.x = element_text(size = 8))
 
-ggsave(filename = "LRC_winners.png",
+ggsave(filename = "LRC_winners.svg",
        plot = last_plot(),
        path = project.path,
-       device = "png",
-       width = 9,
-       height = 5)
+       device = "svg",
+       width = 8,
+       height = 6)
 
 #create plotly and send to server
 p <- ggplotly(ggplot2::last_plot())
@@ -238,14 +249,14 @@ cleanedResultsDF %>%
        x = "Player coefficient",
        y = "Number of players") +
   theme(axis.ticks = element_line(colour = "grey50")) +
-  seashell.theme
+  light.theme
 
-ggsave(filename = "Player_coefficents.png",
+ggsave(filename = "Player_coefficents.svg",
        plot = last_plot(),
        path = project.path,
-       device = "png",
-       width = 9,
-       height = 5)
+       device = "svg",
+       width = 8,
+       height = 6)
 
 #what percentage of times did someone lose all their dollars and then go on to win
 map_lgl(names(playerResultsDF), function(df) {
@@ -280,14 +291,14 @@ EverZeroDF %>%
          subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
          x = "Game size",
          y = "Percent of games") +
-    seashell.theme
+    light.theme
 
-ggsave(filename = "Comeback_winners.png",
+ggsave(filename = "Comeback_winners.svg",
        plot = last_plot(),
        path = project.path,
-       device = "png",
-       width = 9,
-       height = 5)
+       device = "svg",
+       width = 8,
+       height = 6)
 
 # Single game animation ------------------------------------------------------------
 
@@ -310,12 +321,11 @@ LRC.plot <- playLRC(n.players = 4) %>%
   scale_color_brewer(palette = "Spectral") +
   transition_reveal(along = Turn) +
   coord_cartesian(clip = 'off') +
-  labs(title = "Dollars left per player",
+  labs(title = "A Single Game of Left Right Center",
        x = "Turn",
-       y = "Dollars") +
-  seashell.theme +
-  theme(plot.margin = margin(5.5, 50, 5.5, 5.5),
-        panel.background = element_rect(fill = "seashell"))
+       y = "Dollars left") +
+  light.theme +
+  theme(plot.margin = unit(c(1, 2, 1, 1), "cm"))
 
 #build the animation
 LRC.gif <- animate(LRC.plot,
