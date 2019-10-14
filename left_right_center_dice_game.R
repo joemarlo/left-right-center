@@ -190,6 +190,8 @@ cleanedResultsDF %>%
 
 #histogram of winner by starting position
 cleanedResultsDF %>%
+  mutate(GameID.n.players = factor(paste0(GameID.n.players, " players"),
+                                   levels = paste0(n.player.seq, " players"))) %>%
   group_by(GameID.n.players, GameID.sim) %>%
   filter(Turn == max(Turn),
          Rolls.left > 0) %>%
