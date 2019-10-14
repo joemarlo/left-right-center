@@ -1,4 +1,4 @@
-# Is it possible beat Left Right Center?
+# Is it possible to beat Left Right Center?
 `left_right_center_dice_game.R`: R script that generates simulations of LRC and plots the results
 
 Around the holidays my family enjoys a game of [Left Right Center](https://en.wikipedia.org/wiki/LCR_(dice_game)), a ~~completely~~ largely chance-based dice game where everyone puts a few dollars on the line. It's a nice reprieve from the typical skill-based games much of family tends to play, and the only decision involved is: what position around the table do you sit? 
