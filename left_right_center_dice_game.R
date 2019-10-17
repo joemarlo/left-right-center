@@ -5,9 +5,10 @@ library(parallel)
 library(scales)
 library(gifski)
 library(svglite)
+source("Plots/ggplot_themes.R")
 
+set.seed(44)
 project.path <- getwd()
-
 cpu.cores <- detectCores() #number of cores available for parallel processing
 
 # Game design -------------------------------------------------------------
@@ -145,29 +146,6 @@ cleanedResultsDF <- mclapply(names(playerResultsDF),
 
 # EDA and plots -----------------------------------------------------------
 
-#define plot theme
-light.theme <- theme(legend.position = "none",
-                     panel.grid.minor.y = element_line(color = NA),
-                     panel.grid.major.y = element_line(color = "gray95"),
-                     panel.grid.minor.x = element_line(color = NA),
-                     panel.grid.major.x = element_line(color = NA),
-                     panel.background = element_rect(fill = NA),
-                     plot.background = element_rect(fill = NA,
-                                                    color = "gray95",
-                                                    size = 10),
-                     plot.margin = unit(c(1, 1, 1, 1), "cm"),
-                     axis.title = element_text(color = "gray30"),
-                     axis.ticks = element_line(color = NA),
-                     strip.background = element_rect(fill = "gray95"),
-                     strip.text = element_text(color = "gray30",
-                                               size = 11,
-                                               face = "bold"),
-                     plot.title = element_text(color = "gray30",
-                                               face = "bold"),
-                     plot.subtitle = element_text(size = 10,
-                                                  color = "gray30"),
-                     text = element_text(family = "Helvetica"))
-
 #view a single game play
 cleanedResultsDF %>%
   filter(GameID.n.players == 6,
@@ -190,8 +168,8 @@ cleanedResultsDF %>%
 
 #histogram of winner by starting position
 cleanedResultsDF %>%
-  mutate(GameID.n.players = factor(paste0(GameID.n.players, " players"),
-                                   levels = paste0(n.player.seq, " players"))) %>%
+  mutate(GameID.n.players = factor(paste0(GameID.n.players, " participants"),
+                                   levels = paste0(n.player.seq, " participants"))) %>%
   group_by(GameID.n.players, GameID.sim) %>%
   filter(Turn == max(Turn),
          Rolls.left > 0) %>%
@@ -200,26 +178,27 @@ cleanedResultsDF %>%
   scale_x_continuous(breaks = c(NULL, seq(2, max(n.player.seq), 2))) +
   scale_y_continuous(label = scales::comma) +
   facet_wrap( ~ GameID.n.players) +
-  labs(title = "Frequency of LRC wins by player position and total number of players",
-       subtitle = paste0("Results from ", scales::comma(n.sims), " simulations"),
-       x = "Player by starting position",
+  labs(title = "Frequency of LRC wins by participant position",
+       subtitle = paste0("Results from ", scales::comma(n.sims), " simulations each"),
+       x = "Participant by starting position",
        y = "Count of wins") +
   light.theme +
-  theme(axis.text.x = element_text(size = 8))
+  theme(axis.text.x = element_text(size = 8),
+        axis.ticks = element_line(colour = "grey50"))
 
-ggsave(filename = "LRC_winners.svg",
-       plot = last_plot(),
-       path = project.path,
-       device = "svg",
-       width = 8,
-       height = 6)
+# ggsave(filename = "Plots/LRC_winners.svg",
+#        plot = last_plot(),
+#        path = project.path,
+#        device = "svg",
+#        width = 8,
+#        height = 6)
 
 #create plotly and send to server
-p <- ggplotly(ggplot2::last_plot())
-api_create(p, filename = "LRC-winners")
-rm(p)
+# p <- ggplotly(ggplot2::last_plot())
+# api_create(p, filename = "LRC-winners")
+# rm(p)
 
-#linear regression coefficients by game size
+##position advantage by number of wins grouped by game size
 cleanedResultsDF %>%
   group_by(GameID.n.players, GameID.sim) %>%
   filter(Turn == max(Turn),
@@ -228,37 +207,35 @@ cleanedResultsDF %>%
   count(Player) %>%
   group_by(GameID.n.players) %>%
   nest() %>%
-  mutate(Model = map(data, lm, formula = n ~ Player)) %>%
-  pull(Model) %>%
-  map(., function(df) {tidy(df)$estimate[2]}) %>%
+  mutate(Win.adv = map(data, function(df) df$n / df$n[1] - 1)) %>% #calculates the average increase in wins by position
+  pull(Win.adv) %>%
   unlist() %>%
-  as.tibble() %>%
-  rename(lmCoefficient = value) %>%
-  mutate(n.players = n.player.seq) %>%
-  ggplot(aes(x = lmCoefficient, y = n.players, label = round(lmCoefficient, 2))) +
-  geom_segment(aes(x = 0,
-                   y = n.players,
-                   xend = lmCoefficient,
-                   yend = n.players),
-               color = "grey50") +
-  geom_point(size = 10,
-             color = "grey40") +
-  scale_y_continuous(breaks = n.player.seq) +
-  scale_x_log10() +
-  geom_text(size = 2.3,
-            color = "grey90") +
-  labs(title = "Player coefficent from linear model",
-       x = "Player coefficient",
-       y = "Number of players") +
-  theme(axis.ticks = element_line(colour = "grey50")) +
-  light.theme
+  enframe() %>%
+  select(-name) %>%
+  rename(Win.adv = value) %>%
+  mutate(player = sapply(n.player.seq, function(x) 1:x) %>% unlist(), #player position identifier
+         n.players = rep(paste0(n.player.seq, " participants"), n.player.seq), #game size identifier
+         n.players = factor(n.players, #reorder it and add labels
+                            levels = paste0(n.player.seq, " participants"))) %>%
+  ggplot(aes(x = player, y = Win.adv, label = scales::percent(Win.adv))) +
+  geom_col() +
+  facet_wrap( ~ n.players) +
+  scale_x_continuous(breaks = c(NULL, seq(2, max(n.player.seq), 2))) +
+  scale_y_continuous(label = scales::percent) +
+  labs(title = "Expected advantage based on position",
+       subtitle = paste0("Results from ", scales::comma(n.sims), " simulations each"),
+       x = "Participant by starting position",
+       y = "% increase in # of wins compared to Participant 1") +
+  light.theme +
+  theme(axis.text.x = element_text(size = 8),
+        axis.ticks = element_line(colour = "grey50"))
 
-ggsave(filename = "Player_coefficents.svg",
-       plot = last_plot(),
-       path = project.path,
-       device = "svg",
-       width = 8,
-       height = 6)
+# ggsave(filename = "Plots/Player_advantage.svg",
+#        plot = last_plot(),
+#        path = project.path,
+#        device = "svg",
+#        width = 8,
+#        height = 6)
 
 #what percentage of times did someone lose all their dollars and then go on to win
 map_lgl(names(playerResultsDF), function(df) {
@@ -295,12 +272,12 @@ EverZeroDF %>%
          y = "Percent of games") +
     light.theme
 
-ggsave(filename = "Comeback_winners.svg",
-       plot = last_plot(),
-       path = project.path,
-       device = "svg",
-       width = 8,
-       height = 6)
+# ggsave(filename = "Plots/Comeback_winners.svg",
+#        plot = last_plot(),
+#        path = project.path,
+#        device = "svg",
+#        width = 8,
+#        height = 6)
 
 # Single game animation ------------------------------------------------------------
 
@@ -337,8 +314,74 @@ LRC.gif <- animate(LRC.plot,
                    height = 350,
                    width = 500)
 
-anim_save(animation = LRC.gif,
-          filename = "LRC.gif",
-          path = project.path)
+# anim_save(animation = LRC.gif,
+#           filename = "LRC.gif",
+#           path = project.path)
 
 
+# scratch code ------------------------------------------------------------
+
+#position advantage by number of wins grouped by game size
+cleanedResultsDF %>%
+  group_by(GameID.n.players, GameID.sim) %>%
+  filter(Turn == max(Turn),
+         Rolls.left > 0) %>%
+  group_by(GameID.n.players) %>%
+  count(Player) %>%
+  group_by(GameID.n.players) %>%
+  nest() %>%
+  mutate(Win.adv = map(data, function(df) mean(diff(df$n) / df$n[1]))) %>% #calculates the average increase in wins by position
+  pull(Win.adv) %>%
+  unlist() %>%
+  enframe() %>%
+  select(-name) %>%
+  rename(Win.adv = value) %>%
+  mutate(n.players = n.player.seq) %>%
+  ggplot(aes(x = Win.adv, y = n.players, label = scales::percent(Win.adv))) +
+  geom_segment(aes(x = 0, y = n.players, xend = Win.adv, yend = n.players),
+               color = "grey50") +
+  geom_point(size = 10,
+             color = "grey40") +
+  scale_y_continuous(breaks = n.player.seq) +
+  scale_x_log10(labels = scales::percent) +
+  geom_text(size = 2.3,
+            color = "grey90") +
+  labs(title = "Expected advantage based on distance to roller",
+       x = "Percent increase in number of wins for each additional position",
+       y = "Number of participants in the game") +
+  theme(axis.ticks = element_line(colour = "grey50")) +
+  light.theme
+
+#linear regression coefficients by game size
+cleanedResultsDF %>%
+  group_by(GameID.n.players, GameID.sim) %>%
+  filter(Turn == max(Turn),
+         Rolls.left > 0) %>%
+  group_by(GameID.n.players) %>%
+  count(Player) %>%
+  group_by(GameID.n.players) %>%
+  nest() %>%
+  mutate(Model = map(data, lm, formula = n ~ Player)) %>%
+  pull(Model) %>%
+  map(., function(df) {tidy(df)$estimate[2]}) %>%
+  unlist() %>%
+  as.tibble() %>%
+  rename(lmCoefficient = value) %>%
+  mutate(n.players = n.player.seq) %>%
+  ggplot(aes(x = lmCoefficient, y = n.players, label = round(lmCoefficient, 2))) +
+  geom_segment(aes(x = 0,
+                   y = n.players,
+                   xend = lmCoefficient,
+                   yend = n.players),
+               color = "grey50") +
+  geom_point(size = 10,
+             color = "grey40") +
+  scale_y_continuous(breaks = n.player.seq) +
+  scale_x_log10() +
+  geom_text(size = 2.3,
+            color = "grey90") +
+  labs(title = "Player coefficent from linear model",
+       x = "Player coefficient",
+       y = "Number of players") +
+  theme(axis.ticks = element_line(colour = "grey50")) +
+  light.theme
