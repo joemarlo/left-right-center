@@ -8,4 +8,4 @@
 
 `playLRC()`: function pulls it all together and simulates a full game; returns a matrix of the full game with turn-by-turn scores
 
-See blog post: [joemarlo.github.io/posts/lrc](https://joemarlo.github.io/posts/lrc)
+See blog post: [marlo.works/posts/lrc/](https://joemarlo.github.io/posts/lrc)
